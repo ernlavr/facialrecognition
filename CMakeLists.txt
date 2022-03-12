@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 PROJECT (facialRecognition)
 find_package(OpenCV REQUIRED )
 set( NAME_SRC
-    src/main.cpp    
+    src/main.cpp 
+    src/test.cpp    
 )
 
 set( NAME_HEADERS       
-     include/main.hpp
+     include/test.hpp
 )
 
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/include )

@@ -1,7 +1,8 @@
+#ifndef TEST_HPP
+#define TEST_HPP
+
 #include "iostream"
 #include "string.h"
-#include "iostream"
-
 #include "opencv2/opencv.hpp"
 
 class TestClass{
@@ -12,4 +13,7 @@ class TestClass{
 		
 	private:
 		std::string helloWorld;   
+		std::string hi;
 };
+
+#endif

@@ -10,10 +10,10 @@ class TestClass{
 		TestClass();
 		~TestClass();
 		void printHelloWorld(std::string input);
+		void openCameraStream();
 		
 	private:
 		std::string helloWorld;   
-		std::string hi;
 };
 
 #endif

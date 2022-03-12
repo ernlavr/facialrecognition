@@ -1,7 +1,0 @@
-[
-{
-  "directory": "/home/ernests/Documents/Personal/universityNotes/Semester2/imgProc/MiniProject/facialrecognition/build",
-  "command": "/bin/x86_64-linux-gnu-g++-10   -I../include -isystem /usr/include/opencv4  -g   -o CMakeFiles/facialRecognition.dir/src/main.cpp.o -c /home/ernests/Documents/Personal/universityNotes/Semester2/imgProc/MiniProject/facialrecognition/src/main.cpp",
-  "file": "/home/ernests/Documents/Personal/universityNotes/Semester2/imgProc/MiniProject/facialrecognition/src/main.cpp"
-}
-]

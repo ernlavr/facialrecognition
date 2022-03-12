@@ -1,3 +1,0 @@
-/home/ernests/Documents/Personal/universityNotes/Semester2/imgProc/MiniProject/facialrecognition/build/CMakeFiles/edit_cache.dir
-/home/ernests/Documents/Personal/universityNotes/Semester2/imgProc/MiniProject/facialrecognition/build/CMakeFiles/rebuild_cache.dir
-/home/ernests/Documents/Personal/universityNotes/Semester2/imgProc/MiniProject/facialrecognition/build/CMakeFiles/facialRecognition.dir

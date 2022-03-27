@@ -29,6 +29,7 @@ void TestClass::openCameraStream() {
         cap >> frame;
         cv::imshow("frame", frame);
 
+        // press esc to exit
         if(cv::waitKey(1) == 27) {
             return;
         }

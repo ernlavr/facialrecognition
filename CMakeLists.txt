@@ -8,6 +8,7 @@ set( NAME_SRC
 
 set( NAME_HEADERS       
      include/test.hpp
+     include/hog.hpp
 )
 
 INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/include )

@@ -108,38 +108,15 @@ void HOG::L2blockNormalization() {
 }
 
 void HOG::processCell(cv::Mat &cell, std::vector<float> &dstHist) {
-    // Compute a gradient using sobel operation and [-1, 0, 1] mask
-    cv::Mat gradX, gradY;
-    cv::Sobel(cell, gradX, CV_32F, 1, 0, 3);
-    cv::Sobel(cell, gradY, CV_32F, 0, 1, 3);
+    // Compute a gradient using sobel operation and [-1, 0, 1] filter
+    cv::Mat filterX = (cv::Mat_<char>(1, 3) << -1, 0, 1);
+    cv::Mat filterY = (cv::Mat_<char>(3, 1) << -1, 0, 1);
 
-    // Compute the magnitude of the gradient
-    cv::Mat dstMag, dstAngle;
-	cartToPolar(gradX, gradY, dstMag, dstAngle, 1);
-
-    for(int i=0; i<dstMag.rows; ++i) {
-        for(int j=0; j<dstMag.cols; ++j) {
-            std::cout << dstMag.at<float>(i,j) << std::endl;
-        }
-    }
-
-    const cv::Mat _kernelx = (cv::Mat_<char>(1, 3) << -1, 0, 1); ///< derivive kernel
-    const cv::Mat _kernely = (cv::Mat_<char>(3, 1) << -1, 0, 1); ///< derivive kernel
-    
-    cv::Mat Dx, Dy;
-    cv::filter2D(cell, Dx, CV_32F, _kernelx);
-    cv::filter2D(cell, Dy, CV_32F, _kernely);
-    cv::magnitude(Dx, Dy, dstMag);
-    cv::phase(Dx, Dy, dstAngle, true);
-
-    std::cout << " " << std::endl;
-    for(int i=0; i<dstMag.rows; ++i) {
-        for(int j=0; j<dstMag.cols; ++j) {
-            std::cout << dstMag.at<float>(i,j) << std::endl;
-        }
-    }
-
-
+    cv::Mat gradX, gradY, dstMag, dstAngle;
+    cv::filter2D(cell, gradX, CV_32F, filterX);
+    cv::filter2D(cell, gradY, CV_32F, filterY);
+    cv::magnitude(gradX, gradY, dstMag);
+    cv::phase(gradX, gradY, dstAngle, true);
 
     // Convert dstAngle from unsigned to signed if a value is larger than 180
     convertToUnsignedAngles(dstAngle);

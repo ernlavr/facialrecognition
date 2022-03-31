@@ -132,6 +132,13 @@ void HOG::processCell(cv::Mat &cell, std::vector<float> &dstHist) {
     cv::magnitude(Dx, Dy, dstMag);
     cv::phase(Dx, Dy, dstAngle, true);
 
+    std::cout << " " << std::endl;
+    for(int i=0; i<dstMag.rows; ++i) {
+        for(int j=0; j<dstMag.cols; ++j) {
+            std::cout << dstMag.at<float>(i,j) << std::endl;
+        }
+    }
+
 
 
     // Convert dstAngle from unsigned to signed if a value is larger than 180

@@ -12,6 +12,9 @@ private:
     std::vector<float> finalDescriptor;
     std::string imgPath;
 
+    cv::Mat magnitude;
+    cv::Mat angles;
+
     size_t numBins = 9; // Number of bins in histogram 
     size_t spatialResolution = 180; // Spatial resolution of histogram
     size_t pixelsPerBlock = 16;
@@ -50,7 +53,7 @@ public:
 
     void process();
 
-    void processCell(cv::Mat &cell, std::vector<float> &dstHist);
+    void processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::vector<float> &dstHist);
 
     void printMatrix(cv::Mat &mat);
 
@@ -87,6 +90,8 @@ public:
      * @return cv::Mat 
      */
     cv::Mat getVectorMask();
+
+    void computeMagnitudeAndAngle();
 
 };
 

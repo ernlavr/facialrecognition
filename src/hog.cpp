@@ -1,4 +1,7 @@
 #include "hog.hpp"
+#include <vector>                                                               
+#include <iostream>                                                             
+#include <numeric>  
 
 HOG::~HOG(){ }
 
@@ -19,18 +22,37 @@ HOG::HOG(std::string path)
     imwrite("crop1_64128_gray.png", inputImgGray);
 }
 
+void HOG::computeMagnitudeAndAngle() {
+    // Compute a gradient using sobel operation and [-1, 0, 1] filter
+    cv::Mat filterX = (cv::Mat_<char>(1, 3) << -1, 0, 1);
+    cv::Mat filterY = (cv::Mat_<char>(3, 1) << -1, 0, 1);
+
+    cv::Mat gradX, gradY;
+    cv::filter2D(inputImgGray, gradX, CV_32F, filterX);
+    cv::filter2D(inputImgGray, gradY, CV_32F, filterY);
+    cv::magnitude(gradX, gradY, magnitude);
+    cv::phase(gradX, gradY, angles, true);
+
+}
+
 void HOG::process() {
     cellsY = static_cast<int>(inputImgGray.rows / pixelsPerCell);
     cellsX = static_cast<int>(inputImgGray.cols / pixelsPerCell);
     histogram.resize(cellsY);
 
+    computeMagnitudeAndAngle();
+
     // process an image block by block
     for (int y = 0; y < cellsY; y += 1) {
         for (int x = 0; x < cellsX; x += 1) {
             // fetch the cell
+            cv::Rect cell_rect = cv::Rect(x * pixelsPerCell, y * pixelsPerCell, pixelsPerCell, pixelsPerCell);
+            cv::Mat cellMagnitude = magnitude(cell_rect);
+            cv::Mat cellAngle = angles(cell_rect);
+
             cv::Mat cell = inputImgGray(cv::Rect(x * pixelsPerCell, y * pixelsPerCell, pixelsPerCell, pixelsPerCell));
             std::vector<float> dstHist (numBins, 0);
-            processCell(cell, dstHist);
+            processCell(cell, cellMagnitude, cellAngle, dstHist);
 
             // store the histogram in the histogram vector
             histogram.at(y).push_back(dstHist);
@@ -46,6 +68,12 @@ void HOG::process() {
     e.compute(inputImgGray, desc, cv::Size(1, 1), cv::Size(blockStride, blockStride), locations);
     std::cout << "size of desc: " << desc.size() << std::endl;
     std::cout << "dogshit" << std::endl;
+
+    float average = std::accumulate( finalDescriptor.begin(), finalDescriptor.end(), 0.0)/finalDescriptor.size();
+    std::cout << "final descriptor avg: " << average << std::endl;
+
+    float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0)/desc.size();
+    std::cout << "openCV avg: " << hogAvg << std::endl;
 } 
 
 float computeL2norm(std::vector<float> input) {
@@ -107,19 +135,17 @@ void HOG::L2blockNormalization() {
     std::cout << "length of catpiss: " << finalDescriptor.size() << std::endl;
 }
 
-void HOG::processCell(cv::Mat &cell, std::vector<float> &dstHist) {
-    // Compute a gradient using sobel operation and [-1, 0, 1] filter
-    cv::Mat filterX = (cv::Mat_<char>(1, 3) << -1, 0, 1);
-    cv::Mat filterY = (cv::Mat_<char>(3, 1) << -1, 0, 1);
-
-    cv::Mat gradX, gradY, dstMag, dstAngle;
-    cv::filter2D(cell, gradX, CV_32F, filterX);
-    cv::filter2D(cell, gradY, CV_32F, filterY);
-    cv::magnitude(gradX, gradY, dstMag);
-    cv::phase(gradX, gradY, dstAngle, true);
-
+void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::vector<float> &dstHist) {
     // Convert dstAngle from unsigned to signed if a value is larger than 180
     convertToUnsignedAngles(dstAngle);
+
+    // print all values in dstMag
+    for (int i = 0; i < dstMag.rows; i++) {
+        for (int j = 0; j < dstMag.cols; j++) {
+            std::cout << dstMag.at<float>(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
 
     // Calculate the histogram of gradient
     int histogramSize = 9;

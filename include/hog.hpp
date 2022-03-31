@@ -1,16 +1,31 @@
-#ifndef TEST_HPP
-#define TEST_HPP
+#ifndef HOG_HPP
+#define HOG_HPP
 
 #include <string>
 #include <opencv2/opencv.hpp>
 
-class hog
+class HOG
 {
 private:
-    /* data */
+
+    std::vector<std::vector< std::vector<float> >> histogram; // Width x Height x Bins
+    std::vector<float> finalDescriptor;
+    std::string imgPath;
+
+    size_t numBins = 9; // Number of bins in histogram 
+    size_t spatialResolution = 180; // Spatial resolution of histogram
+    size_t pixelsPerBlock = 16;
+    size_t pixelsPerCell = 8; 
+    size_t blockStride = 8; // for a 4 fold coverage
+    size_t cellsX;
+    size_t cellsY;
 public:
-    hog(std::string path);
-    ~hog();
+    HOG(std::string path);
+    ~HOG();
+
+    cv::Mat inputImgRGB;
+    cv::Mat inputImgGray;
+    cv::Mat output;
 
     /**
      * @brief Compresses each colour channel to improve performance at low FPPW
@@ -22,7 +37,6 @@ public:
      * For color images, calculates seperate gradients for each color
      * and takes the one with the largest norm at
      * pixel's gradient vector
-     * 
      */
     void gradientComputation();
 
@@ -34,6 +48,45 @@ public:
      */
     void orientationHistogram();
 
+    void process();
+
+    void processCell(cv::Mat &cell, std::vector<float> &dstHist);
+
+    void printMatrix(cv::Mat &mat);
+
+    /** 
+     * @brief Lowe-style clipped L2 norm
+     */
+    void L2blockNormalization();
+
+    void binning();
+
+    /**
+     * @brief Concatenates two images horizontally into a single image in a side-by-side manner
+     * 
+     * @return cv::Mat 
+     */
+    void displayImage(cv::Mat image1, cv::Mat image2);
+
+    /**
+     * @brief Displays the loaded image
+     * 
+     */
+    void displayImage(cv::Mat image1);
+
+    /**
+     * @brief Converts the angle from signed (0-360) to unsigned (0-180)
+     * 
+     * @param angle 
+     */
+    void convertToUnsignedAngles(cv::Mat &srcMat);
+
+    /**
+     * @brief Returns a visualization-ready image of the features
+     * 
+     * @return cv::Mat 
+     */
+    cv::Mat getVectorMask();
 
 };
 

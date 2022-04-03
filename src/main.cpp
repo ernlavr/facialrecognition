@@ -30,6 +30,7 @@ int main(int argc, char** argv){
 	buf.append("/crop1_64128.png");
 	HOG hog(buf);
 	hog.process();
+    hog.computeAndPrintOpenCV();
 
 	display_superimposed(hog.inputImgGray, hog.getVectorMask(), "inputImgRGB");
 	

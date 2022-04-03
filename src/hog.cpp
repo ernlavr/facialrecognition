@@ -61,23 +61,30 @@ void HOG::process() {
 
     // Perform 16x16 block normalization on the histogram
     L2blockNormalization();
+    
+    float average = std::accumulate( finalDescriptor.begin(), finalDescriptor.end(), 0.0) / finalDescriptor.size();
+    std::cout << "final descriptor avg: " << average << std::endl;
+    writeToFile("myImpl.txt", finalDescriptor);
+    
+}
 
-    auto e = cv::HOGDescriptor(cv::Size(64, 128), cv::Size(16, 16), cv::Size(8, 8), cv::Size(8, 8), numBins);
+void HOG::computeAndPrintOpenCV() {
+    // Initialize
+    auto e = cv::HOGDescriptor(cv::Size(16, 16), cv::Size(16, 16), cv::Size(8, 8), cv::Size(8, 8), numBins);
     std::vector<float> desc;
     std::vector<cv::Point> locations;
-    e.compute(inputImgGray, desc, cv::Size(1, 1), cv::Size(blockStride, blockStride), locations);
+
+    // Compute
+    e.compute(inputImgGray, desc, cv::Size(8, 8), cv::Size(blockStride, blockStride), locations);
+    float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0) / desc.size();
+    
+    // Print stats
     std::cout << "size of desc: " << desc.size() << std::endl;
-    std::cout << "dogshit" << std::endl;
-
-    float average = std::accumulate( finalDescriptor.begin(), finalDescriptor.end(), 0.0)/finalDescriptor.size();
-    std::cout << "final descriptor avg: " << average << std::endl;
-
-    float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0)/desc.size();
     std::cout << "openCV avg: " << hogAvg << std::endl;
-
-    writeToFile("myImpl.txt", finalDescriptor);
+    
+    // Write to .txt file
     writeToFile("opencv.txt", desc);
-} 
+}
 
 float computeL2norm(std::vector<float> input) {
     float sum = 0;
@@ -101,25 +108,23 @@ void HOG::L2blockNormalization() {
     for (int y = 0; y < cellsY - 1; y += 1) { 
         normalizedHistogram.at(y).resize(cellsX - 1); // 16x16 block will have 1 less column than the original image
         for (int x = 0; x < cellsX - 1; x += 1) {
-            // fetch the cells
-            auto cell1 = histogram.at(y).at(x);
-            auto cell2 = histogram.at(y).at(x + 1);
-            auto cell3 = histogram.at(y + 1).at(x);
-            auto cell4 = histogram.at(y + 1).at(x + 1);
-            
-            // Merge the vectors into 1
-            std::vector<float> mergedCells;   
 
-            // compute the L2 norm of each cell
-            auto norm1 = computeL2norm(cell1);
-            auto norm2 = computeL2norm(cell2);
-            auto norm3 = computeL2norm(cell3);
-            auto norm4 = computeL2norm(cell4);
+            std::vector<float> mergedCells;   
+            std::vector <float> norms;
+            std::vector<std::vector<float>> cellVec;
+            
+            for (int width = y; width < y + cellsPerWindow_H; ++width) {
+                for (int height = x; height < x + cellsPerWindow_H; ++height) {
+                    auto cell1 = histogram.at(width).at(height);
+                    auto norm1 = computeL2norm(cell1);
+
+                    cellVec.push_back(cell1);
+                    norms.push_back(norm1);
+                }
+            }
 
             // compute the average of the norms
-            std::vector <float> norms = {norm1, norm2, norm3, norm4};
-            std::vector<std::vector<float>> cellVec = {cell1, cell2, cell3, cell4};
-            
+            // Merge the vectors into 1
             // Loop over normVector and for each cell normalize the values using the correct coefficient from the norms array
             for (int i = 0; i < cellVec.size(); i++) {
                 auto cellVecSize = cellVec.at(i).size();
@@ -136,7 +141,6 @@ void HOG::L2blockNormalization() {
             normalizedHistogram.at(y).at(x) = mergedCells;
         }
     }
-    std::cout << "dogshit" << std::endl;
 
     // Stretch the normalizedHistogram into a single, 1d vector
     for (int y = 0; y < cellsY - 1; y += 1) {
@@ -147,30 +151,11 @@ void HOG::L2blockNormalization() {
             }
         }
     }
-
-    std::cout << "length of catpiss: " << finalDescriptor.size() << std::endl;
 }
 
 void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::vector<float> &dstHist) {
     // Convert dstAngle from unsigned to signed if a value is larger than 180
     convertToUnsignedAngles(dstAngle);
-
-    // // print all values in dstMag
-    // for (int i = 0; i < dstMag.rows; i++) {
-    //     for (int j = 0; j < dstMag.cols; j++) {
-    //         std::cout << dstMag.at<float>(i, j) << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-
-    // std::cout << std::endl;
-    // for (int i = 0; i < dstAngle.rows; i++) {
-    //     for (int j = 0; j < dstAngle.cols; j++) {
-    //         std::cout << dstAngle.at<float>(i, j) << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    
 
     // Calculate the histogram of gradient
     int histogramSize = 9;
@@ -185,16 +170,6 @@ void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::ve
             dstHist[binRounded] += mag;
         }
     }
-
-    // std::cout << std::endl;
-    // float total = 0;
-    // for (int i = 0; i < dstHist.size(); i++) {
-    //     std::cout << dstHist.at(i) << " ";
-    //     total += dstHist[i];
-    // }
-    // // print total
-    // std::cout << "Total: " << total << std::endl;
-    // exit(0);
 }
 
 cv::Mat HOG::getVectorMask() {
@@ -217,9 +192,7 @@ cv::Mat HOG::getVectorMask() {
     // iterate over the cells in histogram
     for (int i = 0; i < histogram.size(); i++) {
         for(int j = 0; j < histogram.at(i).size(); j++) {
-
             int colorMagnitude = static_cast<int>(histogram.at(i).at(j).at(0) / maxValue * 255);
-
             for (int k = 0; k < histogram.at(i).at(j).size(); k++) {
                 // if the value is greater than the threshold, set the mask to 255
                 if (histogram.at(i).at(j).at(k) > maxValue * 0.1) {
@@ -252,16 +225,6 @@ void HOG::convertToUnsignedAngles(cv::Mat &srcMat) {
     }
 }
 
-void HOG::printMatrix(cv::Mat &mat) {
-    // Print the matrix
-    for (int i = 0; i < mat.rows; i++) {
-        for (int j = 0; j < mat.cols; j++) {
-            std::cout << mat.at<float>(i, j) << " ";
-        }
-        std::cout << std::endl;
-    }
-}
-
 /**
  * @brief Display image1 colored and image2 grayscale horizontally side by side
  * @param image1 
@@ -283,11 +246,3 @@ void HOG::displayImage(cv::Mat image1) {
     cv::waitKey(0);
 }
 
-void HOG::squareRootColorGamma() {
-    // Square root of each color channel
-    auto tmp = inputImgGray.clone();
-    tmp.convertTo(tmp, CV_32F);
-    cv::sqrt(tmp, output);
-    output.convertTo(output, CV_8U);
-    displayImage(output);
-}

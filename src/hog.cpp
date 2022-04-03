@@ -74,6 +74,9 @@ void HOG::process() {
 
     float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0)/desc.size();
     std::cout << "openCV avg: " << hogAvg << std::endl;
+
+    writeToFile("myImpl.txt", finalDescriptor);
+    writeToFile("opencv.txt", desc);
 } 
 
 float computeL2norm(std::vector<float> input) {
@@ -82,6 +85,13 @@ float computeL2norm(std::vector<float> input) {
         sum += i * i;
     }
     return sqrt(sum);
+}
+
+void clipNumber(float &input) {
+    if(input > 0.2)
+        input = 0.2;
+    else if(input < 0)
+        input = 0;
 }
 
 void HOG::L2blockNormalization() {
@@ -114,9 +124,15 @@ void HOG::L2blockNormalization() {
             for (int i = 0; i < cellVec.size(); i++) {
                 auto cellVecSize = cellVec.at(i).size();
                 for (int j = 0; j < cellVecSize; j++) {
-                    mergedCells.push_back(cellVec.at(i).at(j) / norms.at(i));
+                    auto entry = cellVec.at(i).at(j) / norms.at(i);
+                    clipNumber(entry);
+                    mergedCells.push_back(entry);
                 }
             }
+            // print all values from block_norm
+            for(auto& val : mergedCells)
+                std::cout << val << " ";
+            std::cout << std::endl;
             normalizedHistogram.at(y).at(x) = mergedCells;
         }
     }
@@ -139,13 +155,22 @@ void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::ve
     // Convert dstAngle from unsigned to signed if a value is larger than 180
     convertToUnsignedAngles(dstAngle);
 
-    // print all values in dstMag
-    for (int i = 0; i < dstMag.rows; i++) {
-        for (int j = 0; j < dstMag.cols; j++) {
-            std::cout << dstMag.at<float>(i, j) << " ";
-        }
-        std::cout << std::endl;
-    }
+    // // print all values in dstMag
+    // for (int i = 0; i < dstMag.rows; i++) {
+    //     for (int j = 0; j < dstMag.cols; j++) {
+    //         std::cout << dstMag.at<float>(i, j) << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // std::cout << std::endl;
+    // for (int i = 0; i < dstAngle.rows; i++) {
+    //     for (int j = 0; j < dstAngle.cols; j++) {
+    //         std::cout << dstAngle.at<float>(i, j) << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    
 
     // Calculate the histogram of gradient
     int histogramSize = 9;
@@ -160,6 +185,16 @@ void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::ve
             dstHist[binRounded] += mag;
         }
     }
+
+    // std::cout << std::endl;
+    // float total = 0;
+    // for (int i = 0; i < dstHist.size(); i++) {
+    //     std::cout << dstHist.at(i) << " ";
+    //     total += dstHist[i];
+    // }
+    // // print total
+    // std::cout << "Total: " << total << std::endl;
+    // exit(0);
 }
 
 cv::Mat HOG::getVectorMask() {
@@ -185,8 +220,6 @@ cv::Mat HOG::getVectorMask() {
 
             int colorMagnitude = static_cast<int>(histogram.at(i).at(j).at(0) / maxValue * 255);
 
-
-
             for (int k = 0; k < histogram.at(i).at(j).size(); k++) {
                 // if the value is greater than the threshold, set the mask to 255
                 if (histogram.at(i).at(j).at(k) > maxValue * 0.1) {
@@ -196,15 +229,23 @@ cv::Mat HOG::getVectorMask() {
         }
     }
 
-
-
     return vectorMask;
+}
+
+void HOG::writeToFile(std::string filename, std::vector<float> &vector) {
+    // Write the descriptor to a file
+    std::ofstream file;
+    file.open(filename);
+    for (auto i : vector) {
+        file << i << " ";
+    }
+    file.close();
 }
 
 void HOG::convertToUnsignedAngles(cv::Mat &srcMat) {
     for (int i = 0; i < srcMat.rows; i++) {
         for (int j = 0; j < srcMat.cols; j++) {
-            if (srcMat.at<float>(i, j) > 180) {
+            if (srcMat.at<float>(i, j) >= 180) {
                 srcMat.at<float>(i, j) = srcMat.at<float>(i, j) - 180;
             }
         }

@@ -93,6 +93,8 @@ public:
 
     void computeMagnitudeAndAngle();
 
+    void writeToFile(std::string path, std::vector<float> &descriptor);
+
 };
 
 #endif

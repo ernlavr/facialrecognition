@@ -22,6 +22,8 @@ private:
     size_t blockStride = 8; // for a 4 fold coverage
     size_t cellsX;
     size_t cellsY;
+    const size_t cellsPerWindow_H = 2;
+    const size_t cellsPerWindow_W = 2;
 public:
     HOG(std::string path);
     ~HOG();
@@ -29,11 +31,6 @@ public:
     cv::Mat inputImgRGB;
     cv::Mat inputImgGray;
     cv::Mat output;
-
-    /**
-     * @brief Compresses each colour channel to improve performance at low FPPW
-     */
-    void squareRootColorGamma();
 
     /**
      * @brief Gradient computed using 1D gaussian mask (-1; 0; 1)
@@ -54,8 +51,6 @@ public:
     void process();
 
     void processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::vector<float> &dstHist);
-
-    void printMatrix(cv::Mat &mat);
 
     /** 
      * @brief Lowe-style clipped L2 norm

@@ -113,7 +113,7 @@ private:
      * @param angle Gradient angles of the particular cell
      * @param dstHist Oriented histogram of the particular cell
      */
-    void processCell(cv::Mat &cell, cv::Mat &magn, cv::Mat &angle, std::vector<float> &dstHist);
+    void processCell(const cv::Mat &cell, const cv::Mat &magn, cv::Mat &angle, std::vector<float> &dstHist);
     /** 
      * @brief Lowe-style clipped L2 norm
      */

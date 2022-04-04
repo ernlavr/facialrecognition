@@ -172,20 +172,20 @@ void HOG::L2blockNormalization() {
     }
 }
 
-void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::vector<float> &dstHist) {
+void HOG::processCell(const cv::Mat &cell, const cv::Mat &cellMagn, cv::Mat &cellAngle, std::vector<float> &dstHist) {
     // Convert dstAngle from unsigned to signed if a value is larger than 180
-    convertToUnsignedAngles(dstAngle);
+    convertToUnsignedAngles(cellAngle);
 
     // Calculate the histogram of gradient
     int histogramSize = 9;
     int binSize = 180 / histogramSize;
-    for (int i = 0; i < dstAngle.rows; i++) {
-        for (int j = 0; j < dstAngle.cols; j++) {
-            auto angle = dstAngle.at<float>(i, j);
+    for (int i = 0; i < cellAngle.rows; i++) {
+        for (int j = 0; j < cellAngle.cols; j++) {
+            auto angle = cellAngle.at<float>(i, j);
             auto binUnrounded = static_cast<int>(angle / binSize);
             int binRounded = static_cast<int>(binUnrounded);
 
-            auto mag = dstMag.at<float>(i, j);
+            auto mag = cellMagn.at<float>(i, j);
             dstHist[binRounded] += mag;
         }
     }

@@ -40,7 +40,7 @@ private:
     /**
      * @brief Folder to which all output files are saved to
      */
-    const std::string OUTPUT_FOLDER = ROOT_FOLDER + "/output/";
+    const std::string OUTPUT_FOLDER = ROOT_FOLDER + "output/";
     /**
      * @brief Number of cells in width
      */

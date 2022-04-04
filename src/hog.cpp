@@ -5,6 +5,7 @@
 #include <iostream>                                                             
 #include <numeric>  
 #include <math.h>
+#include <filesystem>
 
 HOG::~HOG(){ }
 
@@ -23,7 +24,10 @@ HOG::HOG(std::string path, bool verbose)
     assert(inputImgRGB.cols % 2 == 0);
     // Convert inputImgRGB to grayscale
     cv::cvtColor(inputImgRGB, inputImgGray, cv::COLOR_BGR2GRAY);
-    imwrite("crop1_64128_gray.png", inputImgGray);
+
+    if(verbose) {
+        saveImage("crop1_64128_gray.png", inputImgGray);
+    }
 }
 
 void HOG::gradientComputation() {
@@ -37,11 +41,16 @@ void HOG::gradientComputation() {
     cv::magnitude(gradX, gradY, magnitude);
     cv::phase(gradX, gradY, angles, true);
 
-    // Display gradX, gradY, magnitude and angles
-    saveImage(OUTPUT_FOLDER + "gradX.jpg", gradX);
-    saveImage(OUTPUT_FOLDER + "gradY.jpg", gradY);
-    saveImage(OUTPUT_FOLDER + "magnitude.jpg", magnitude);
-    saveImage(OUTPUT_FOLDER + "directions.jpg", angles);       
+    // Save images in verbose mode
+    if(verbose) {
+        cv::Mat gradXY;
+        cv::addWeighted(gradX, 0.5, gradY, 0.5, 0.0, gradXY);
+        saveImage("gradXY.png", gradXY);
+        saveImage("gradX.jpg", gradX);
+        saveImage("gradY.jpg", gradY);
+        saveImage("magnitude.jpg", magnitude);
+        saveImage("directions.jpg", angles);       
+    }
 }
 
 void HOG::process() {
@@ -72,10 +81,13 @@ void HOG::process() {
     // Perform 16x16 block normalization on the histogram
     L2blockNormalization();
     
-    float average = std::accumulate( descriptor.begin(), descriptor.end(), 0.0) / descriptor.size();
-    std::cout << "Length of final descriptor: " << descriptor.size() << std::endl;
-    std::cout << "Average value of final descriptor: " << average << std::endl;
-    writeToFile(OUTPUT_FOLDER + "HOG_myImpl.txt", descriptor);
+    // Print and save if verbose mode is enabled
+    if(verbose) {
+        float average = std::accumulate( descriptor.begin(), descriptor.end(), 0.0) / descriptor.size();
+        std::cout << "Length of final descriptor: " << descriptor.size() << std::endl;
+        std::cout << "Average value of final descriptor: " << average << std::endl;
+        writeToFile("HOG_myImpl.txt", descriptor);
+    }
 }
 
 void HOG::computeAndPrintOpenCV() {
@@ -86,10 +98,6 @@ void HOG::computeAndPrintOpenCV() {
 
     // Compute
     e.compute(inputImgGray, desc, cv::Size(8, 8), cv::Size(0, 0), locations);
-    
-    auto opencvMax = std::max_element(std::begin(desc), std::end(desc));
-    auto myMax = std::max_element(std::begin(descriptor), std::end(descriptor));
-
 
     float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0) / desc.size();
     // Print stats
@@ -97,7 +105,7 @@ void HOG::computeAndPrintOpenCV() {
     std::cout << "openCV avg: " << hogAvg << std::endl;
     
     // Write to .txt file
-    writeToFile(OUTPUT_FOLDER + "HOG_openCV.txt", desc);
+    writeToFile("HOG_openCV.txt", desc);
 }
 
 float HOG::computeL2norm(std::vector<float> input) {
@@ -185,7 +193,7 @@ void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::ve
 void HOG::writeToFile(std::string filename, std::vector<float> &vector) {
     // Write the descriptor to a file
     std::ofstream file;
-    file.open(filename);
+    file.open(OUTPUT_FOLDER + filename);
     for (auto i : vector) {
         file << i << " ";
     }
@@ -226,5 +234,9 @@ void HOG::displayImage(cv::Mat image1) {
 }
 
 void HOG::saveImage(std::string filename, cv::Mat image) {
-    cv::imwrite(filename, image);
+    auto outputPath = OUTPUT_FOLDER + filename;
+    std::filesystem::path output(OUTPUT_FOLDER);
+    std::filesystem::path file(filename);
+    auto pathToWrite = (std::filesystem::current_path() / output / file).string();
+    cv::imwrite(outputPath, image);
 }

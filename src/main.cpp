@@ -33,11 +33,13 @@ int main(int argc, char** argv){
         }
     }
 
-	std::string buf(DATASET_FOLDER);
-	buf.append("/crop1_64128.png");
-	HOG hog(buf, verbose);
+	std::string img(DATASET_FOLDER);
+	img.append("/crop1_64128.png");
+	HOG hog(img, verbose);
 	hog.process();
-    hog.computeAndPrintOpenCV();
-	
+    
+    if(verbose) {
+        hog.computeAndPrintOpenCV();
+    }
 	return 0;
 }

@@ -2,6 +2,7 @@
 #include <vector>                                                               
 #include <iostream>                                                             
 #include <numeric>  
+#include <math.h>
 
 HOG::~HOG(){ }
 
@@ -70,20 +71,26 @@ void HOG::process() {
 
 void HOG::computeAndPrintOpenCV() {
     // Initialize
-    auto e = cv::HOGDescriptor(cv::Size(16, 16), cv::Size(16, 16), cv::Size(8, 8), cv::Size(8, 8), numBins);
+    auto e = cv::HOGDescriptor(cv::Size(64, 128), cv::Size(16, 16), cv::Size(8, 8), cv::Size(8, 8), numBins);
     std::vector<float> desc;
     std::vector<cv::Point> locations;
 
     // Compute
-    e.compute(inputImgGray, desc, cv::Size(8, 8), cv::Size(blockStride, blockStride), locations);
-    float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0) / desc.size();
+    e.compute(inputImgGray, desc, cv::Size(8, 8), cv::Size(0, 0), locations);
     
+    auto opencvMax = std::max_element(std::begin(desc), std::end(desc));
+    auto myMax = std::max_element(std::begin(finalDescriptor), std::end(finalDescriptor));
+
+
+    float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0) / desc.size();
     // Print stats
-    std::cout << "size of desc: " << desc.size() << std::endl;
+    std::cout << "size of mine: " << finalDescriptor.size() << std::endl;
+    std::cout << "size of openCV: " << desc.size() << std::endl;
     std::cout << "openCV avg: " << hogAvg << std::endl;
     
     // Write to .txt file
     writeToFile("opencv.txt", desc);
+    writeToFile("mine.txt", finalDescriptor);
 }
 
 float computeL2norm(std::vector<float> input) {

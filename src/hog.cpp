@@ -26,15 +26,16 @@ HOG::HOG(std::string path, bool verbose)
     cv::cvtColor(inputImgRGB, inputImgGray, cv::COLOR_BGR2GRAY);
 
     if(verbose) {
-        saveImage("crop1_64128_gray.png", inputImgGray);
+        saveImage("crop1_64128_gray.jpg", inputImgGray);
     }
 }
 
 void HOG::gradientComputation() {
-    // Compute a gradient using sobel operation and [-1, 0, 1] filter
+    // Create filters with [-1, 0, 1] mask
     cv::Mat filterX = (cv::Mat_<char>(1, 3) << -1, 0, 1);
     cv::Mat filterY = (cv::Mat_<char>(3, 1) << -1, 0, 1);
 
+    // Compute the gradient and derive its magnitude and angles
     cv::Mat gradX, gradY;
     cv::filter2D(inputImgGray, gradX, CV_32F, filterX);
     cv::filter2D(inputImgGray, gradY, CV_32F, filterY);
@@ -45,7 +46,7 @@ void HOG::gradientComputation() {
     if(verbose) {
         cv::Mat gradXY;
         cv::addWeighted(gradX, 0.5, gradY, 0.5, 0.0, gradXY);
-        saveImage("gradXY.png", gradXY);
+        saveImage("gradXY.jpg", gradXY);
         saveImage("gradX.jpg", gradX);
         saveImage("gradY.jpg", gradY);
         saveImage("magnitude.jpg", magnitude);

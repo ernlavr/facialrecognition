@@ -1,3 +1,5 @@
+// Implemented by Ernests Lavrinovics as part of Image Processing and Computer Vision course in Aalborg University, Medialogy 2022.
+
 #include "test.hpp"
 #include "hog.hpp"
 #include <iostream>
@@ -23,16 +25,19 @@ cv::Mat custom_normalization(const cv::Mat& src) {
 }
 
 int main(int argc, char** argv){
-
-	std::cout << std::filesystem::current_path() << std::endl;
+    bool verbose = false;
+    if(argc > 1) {
+        auto arg1 = std::string(argv[1]);
+        if(arg1 == "-v") {
+            verbose = true;
+        }
+    }
 
 	std::string buf(DATASET_FOLDER);
 	buf.append("/crop1_64128.png");
-	HOG hog(buf);
+	HOG hog(buf, verbose);
 	hog.process();
     hog.computeAndPrintOpenCV();
-
-	display_superimposed(hog.inputImgGray, hog.getVectorMask(), "inputImgRGB");
 	
 	return 0;
 }

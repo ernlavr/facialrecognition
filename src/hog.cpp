@@ -1,3 +1,5 @@
+// Implemented by Ernests Lavrinovics as part of Image Processing and Computer Vision course in Aalborg University, Medialogy 2022.
+
 #include "hog.hpp"
 #include <vector>                                                               
 #include <iostream>                                                             
@@ -6,10 +8,11 @@
 
 HOG::~HOG(){ }
 
-HOG::HOG(std::string path)
+HOG::HOG(std::string path, bool verbose) 
+: verbose(verbose), imgPath(path)
 {
     // Load image
-    inputImgRGB = cv::imread(path);
+    auto inputImgRGB = cv::imread(path);
 
     // Error Handling
     if (inputImgRGB.empty()) {
@@ -23,7 +26,7 @@ HOG::HOG(std::string path)
     imwrite("crop1_64128_gray.png", inputImgGray);
 }
 
-void HOG::computeMagnitudeAndAngle() {
+void HOG::gradientComputation() {
     // Compute a gradient using sobel operation and [-1, 0, 1] filter
     cv::Mat filterX = (cv::Mat_<char>(1, 3) << -1, 0, 1);
     cv::Mat filterY = (cv::Mat_<char>(3, 1) << -1, 0, 1);
@@ -34,6 +37,11 @@ void HOG::computeMagnitudeAndAngle() {
     cv::magnitude(gradX, gradY, magnitude);
     cv::phase(gradX, gradY, angles, true);
 
+    // Display gradX, gradY, magnitude and angles
+    saveImage(OUTPUT_FOLDER + "gradX.jpg", gradX);
+    saveImage(OUTPUT_FOLDER + "gradY.jpg", gradY);
+    saveImage(OUTPUT_FOLDER + "magnitude.jpg", magnitude);
+    saveImage(OUTPUT_FOLDER + "directions.jpg", angles);       
 }
 
 void HOG::process() {
@@ -41,7 +49,7 @@ void HOG::process() {
     cellsX = static_cast<int>(inputImgGray.cols / pixelsPerCell);
     histogram.resize(cellsY);
 
-    computeMagnitudeAndAngle();
+    gradientComputation();
 
     // process an image block by block
     for (int y = 0; y < cellsY; y += 1) {
@@ -50,8 +58,9 @@ void HOG::process() {
             cv::Rect cell_rect = cv::Rect(x * pixelsPerCell, y * pixelsPerCell, pixelsPerCell, pixelsPerCell);
             cv::Mat cellMagnitude = magnitude(cell_rect);
             cv::Mat cellAngle = angles(cell_rect);
-
-            cv::Mat cell = inputImgGray(cv::Rect(x * pixelsPerCell, y * pixelsPerCell, pixelsPerCell, pixelsPerCell));
+            cv::Mat cell = inputImgGray(cell_rect);
+            
+            // Prepare destination container and compute the histogram for the cell
             std::vector<float> dstHist (numBins, 0);
             processCell(cell, cellMagnitude, cellAngle, dstHist);
 
@@ -63,10 +72,10 @@ void HOG::process() {
     // Perform 16x16 block normalization on the histogram
     L2blockNormalization();
     
-    float average = std::accumulate( finalDescriptor.begin(), finalDescriptor.end(), 0.0) / finalDescriptor.size();
-    std::cout << "final descriptor avg: " << average << std::endl;
-    writeToFile("myImpl.txt", finalDescriptor);
-    
+    float average = std::accumulate( descriptor.begin(), descriptor.end(), 0.0) / descriptor.size();
+    std::cout << "Length of final descriptor: " << descriptor.size() << std::endl;
+    std::cout << "Average value of final descriptor: " << average << std::endl;
+    writeToFile(OUTPUT_FOLDER + "HOG_myImpl.txt", descriptor);
 }
 
 void HOG::computeAndPrintOpenCV() {
@@ -79,21 +88,19 @@ void HOG::computeAndPrintOpenCV() {
     e.compute(inputImgGray, desc, cv::Size(8, 8), cv::Size(0, 0), locations);
     
     auto opencvMax = std::max_element(std::begin(desc), std::end(desc));
-    auto myMax = std::max_element(std::begin(finalDescriptor), std::end(finalDescriptor));
+    auto myMax = std::max_element(std::begin(descriptor), std::end(descriptor));
 
 
     float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0) / desc.size();
     // Print stats
-    std::cout << "size of mine: " << finalDescriptor.size() << std::endl;
     std::cout << "size of openCV: " << desc.size() << std::endl;
     std::cout << "openCV avg: " << hogAvg << std::endl;
     
     // Write to .txt file
-    writeToFile("opencv.txt", desc);
-    writeToFile("mine.txt", finalDescriptor);
+    writeToFile(OUTPUT_FOLDER + "HOG_openCV.txt", desc);
 }
 
-float computeL2norm(std::vector<float> input) {
+float HOG::computeL2norm(std::vector<float> input) {
     float sum = 0;
     for (auto i : input) {
         sum += i * i;
@@ -101,7 +108,7 @@ float computeL2norm(std::vector<float> input) {
     return sqrt(sum);
 }
 
-void clipNumber(float &input) {
+void HOG::clipNumber(float &input) {
     if(input > 0.2)
         input = 0.2;
     else if(input < 0)
@@ -141,10 +148,6 @@ void HOG::L2blockNormalization() {
                     mergedCells.push_back(entry);
                 }
             }
-            // print all values from block_norm
-            for(auto& val : mergedCells)
-                std::cout << val << " ";
-            std::cout << std::endl;
             normalizedHistogram.at(y).at(x) = mergedCells;
         }
     }
@@ -154,7 +157,7 @@ void HOG::L2blockNormalization() {
         for (int x = 0; x < cellsX - 1; x += 1) {
             auto cell = normalizedHistogram.at(y).at(x);
             for (auto i : cell) {
-                finalDescriptor.push_back(i);
+                descriptor.push_back(i);
             }
         }
     }
@@ -177,39 +180,6 @@ void HOG::processCell(cv::Mat &cell, cv::Mat &dstMag, cv::Mat &dstAngle, std::ve
             dstHist[binRounded] += mag;
         }
     }
-}
-
-cv::Mat HOG::getVectorMask() {
-    // Create a vector mask
-    cv::Mat vectorMask(inputImgGray.rows, inputImgGray.cols, CV_8U, cv::Scalar(0));
-
-    // Get the max value from the histogram
-    float maxValue = 0;
-    //std::vector<std::vector<float>> cell_hist_maxs(this.ce);
-    for (int i = 0; i < histogram.size(); i++) {
-        for(int j = 0; j < histogram.at(i).size(); j++) {
-            for (int k = 0; k < histogram.at(i).at(j).size(); k++) {
-                if (histogram.at(i).at(j).at(k) > maxValue) {
-                    maxValue = histogram.at(i).at(j).at(k);
-                }
-            }
-        }
-    }
-
-    // iterate over the cells in histogram
-    for (int i = 0; i < histogram.size(); i++) {
-        for(int j = 0; j < histogram.at(i).size(); j++) {
-            int colorMagnitude = static_cast<int>(histogram.at(i).at(j).at(0) / maxValue * 255);
-            for (int k = 0; k < histogram.at(i).at(j).size(); k++) {
-                // if the value is greater than the threshold, set the mask to 255
-                if (histogram.at(i).at(j).at(k) > maxValue * 0.1) {
-                    vectorMask.at<uchar>(i * pixelsPerCell, j * pixelsPerCell) = 255;
-                }
-            }
-        }
-    }
-
-    return vectorMask;
 }
 
 void HOG::writeToFile(std::string filename, std::vector<float> &vector) {
@@ -249,7 +219,12 @@ void HOG::displayImage(cv::Mat image1, cv::Mat image2) {
  * @param image2 
  */
 void HOG::displayImage(cv::Mat image1) {
-    cv::imshow("img1", image1);
+    cv::Mat toDisplay;
+    image1.convertTo(toDisplay, CV_8U);
+    cv::imshow("img1", toDisplay);
     cv::waitKey(0);
 }
 
+void HOG::saveImage(std::string filename, cv::Mat image) {
+    cv::imwrite(filename, image);
+}

@@ -72,7 +72,7 @@ void HOG::process() {
       
       // Prepare destination container and compute the histogram for the cell
       std::vector<float> dstHist (numBins, 0);
-      processCell(cell, cellMagnitude, cellAngle,   );
+      processCell(cell, cellMagnitude, cellAngle, dstHist);
 
       // store the histogram in the histogram vector
       histogram.at(y).push_back(dstHist);
@@ -92,81 +92,74 @@ void HOG::process() {
 }
 
 void HOG::computeAndPrintOpenCV() {
-  // Initialize
-  auto e = cv::HOGDescriptor(cv::Size(64, 128), cv::Size(16, 16), cv::Size(8, 8), cv::Size(8, 8), numBins);
   std::vector<float> desc;
   std::vector<cv::Point> locations;
+  auto winSize = cv::Size(64, 128);
+  auto blockSize = cv::Size(16, 16);
+  auto stride = cv::Size(8, 8);
+  auto cellSize = cv::Size(8, 8);
+  auto padding = cv::Size(0, 0);
 
   // Compute
-  e.compute(inputImgGray, desc, cv::Size(8, 8), cv::Size(0, 0), locations);
-
-  float hogAvg = std::accumulate( desc.begin(), desc.end(), 0.0) / desc.size();
-  // Print stats
-  std::cout << "size of openCV: " << desc.size() << std::endl;
-  std::cout << "openCV avg: " << hogAvg << std::endl;
+  auto HOGopenCV = cv::HOGDescriptor(winSize, blockSize, stride, cellSize, numBins);
+  HOGopenCV.compute(inputImgGray, desc, stride, padding, locations);
   
   // Write to .txt file
   writeToFile("HOG_openCV.txt", desc);
 }
 
-float HOG::computeL2norm(std::vector<float> input) {
+void HOG::L2norm(std::vector<std::vector<float>> &input) {
+  // L2 Divider
   float sum = 0;
-  for (auto i : input) {
-    sum += i * i;
-  }
-  return sqrt(sum);
-}
-
-void HOG::clipNumber(float &input) {
-  if(input > 0.2)
-    input = 0.2;
-  else if(input < 0)
-    input = 0;
-}
-
-void HOG::L2blockNormalization() {
-  // Loop over the histogram variable with a 16x16 sliding window and normalize the values
-  std::vector<std::vector<std::vector<float>>> normalizedHistogram;
-  normalizedHistogram.resize(cellsY - 1); // 16x16 block will have 1 less row than the original image
-  for (int y = 0; y < cellsY - 1; y += 1) { 
-    normalizedHistogram.at(y).resize(cellsX - 1); // 16x16 block will have 1 less column than the original image
-    for (int x = 0; x < cellsX - 1; x += 1) {
-
-      std::vector<float> mergedCells;   
-      std::vector <float> norms;
-      std::vector<std::vector<float>> cellVec;
-      
-      for (int width = y; width < y + cellsPerWindow_H; ++width) {
-        for (int height = x; height < x + cellsPerWindow_H; ++height) {
-          auto cell1 = histogram.at(width).at(height);
-          auto norm1 = computeL2norm(cell1);
-
-          cellVec.push_back(cell1);
-          norms.push_back(norm1);
-        }
-      }
-
-      // compute the average of the norms
-      // Merge the vectors into 1
-      // Loop over normVector and for each cell normalize the values using the correct coefficient from the norms array
-      for (int i = 0; i < cellVec.size(); i++) {
-        auto cellVecSize = cellVec.at(i).size();
-        for (int j = 0; j < cellVecSize; j++) {
-          auto entry = cellVec.at(i).at(j) / norms.at(i);
-          clipNumber(entry);
-          mergedCells.push_back(entry);
-        }
-      }
-      normalizedHistogram.at(y).at(x) = mergedCells;
+  for(auto &i : input) { // for each cell
+    for(auto &j : i) { // for each histogram
+      sum += j * j;
     }
   }
 
-  // Stretch the normalizedHistogram into a single, 1d vector
-  for (int y = 0; y < cellsY - 1; y += 1) {
+  // Divide each cell in input
+  for(auto &i : input) {
+    for(auto &j : i) {
+      j /= sqrt(sum);
+    }
+  }
+}
+
+void HOG::clipNumber(std::vector<std::vector<float>> &input) {
+  // Clip each cell to 0.2
+  for(auto &i : input) { // for each cell
+    for(auto &j : i) { // for each histogram
+      if(j > 0.2) {
+        j = 0.2;
+      }
+      else if(j < 0) {
+        j = 0;
+      }
+    }
+  }
+}
+
+void HOG::L2blockNormalization() {
+  for (int y = 0; y < cellsY - 1; y += 1) { 
     for (int x = 0; x < cellsX - 1; x += 1) {
-      auto cell = normalizedHistogram.at(y).at(x);
-      for (auto i : cell) {
-        descriptor.push_back(i);
+      std::vector<std::vector<float>> window;
+      // Fetch the 2 by 2 window of cells and its divisor
+      for (int width = y; width < y + cellsPerWindow_H; ++width) {
+        for (int height = x; height < x + cellsPerWindow_H; ++height) {
+          auto cell = histogram.at(width).at(height);
+          window.push_back(cell);
+        }
+      }
+
+      L2norm(window);
+      clipNumber(window);
+      L2norm(window);
+      
+      // Add the normalized values to the final 1D descriptor
+      for(auto i : window) {
+        for(auto j : i) {
+          descriptor.push_back(j);
+        }
       }
     }
   }

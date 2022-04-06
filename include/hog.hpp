@@ -91,13 +91,13 @@ private:
      * @param input 
      * @return float summed-square root of the input
      */
-    float computeL2norm(std::vector<float> input);
+    void L2norm(std::vector<std::vector<float>> &input);
     /**
      * @brief Clip the input to the 0-0.2f range
      * 
      * @param input Float to be cliped
      */
-    void clipNumber(float &input);
+    void clipNumber(std::vector<std::vector<float>> &input);
     /**
      * @brief Gradient computed using 1D gaussian mask (-1; 0; 1)
      * For color images, calculates seperate gradients for each color

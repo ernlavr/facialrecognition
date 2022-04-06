@@ -123,7 +123,7 @@ private:
      * 
      * @param angle 
      */
-    void convertToUnsignedAngles(cv::Mat &srcMat);
+    void convToUnsignAngl(cv::Mat &srcAngles);
 
 public:
     /**

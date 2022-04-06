@@ -1,6 +1,5 @@
 // Implemented by Ernests Lavrinovics as part of Image Processing and Computer Vision course in Aalborg University, Medialogy 2022.
 
-#include "test.hpp"
 #include "hog.hpp"
 #include <iostream>
 #include <string>

@@ -17,10 +17,11 @@ def main():
     opencv_np : np.ndarray=np.array(opencv)
 
     # Calculate mean+std
-    print(f"Mean Mine       {len(mine_np)}")
+    print(f"Length Mine       {len(mine_np)}")
+    print(f"Mean Mine         {mine_np.mean()}")
+    print(f"Std Mine          {mine_np.std()}")
+
     print(f"Length OpenCV   {len(opencv_np)}")
-    print(f"Mean Mine       {mine_np.mean()}")
-    print(f"Std Mine        {mine_np.std()}")
     print(f"Mean OpenCV     {opencv_np.mean()}")
     print(f"Std OpenCV      {opencv_np.std()}")
     

@@ -97,18 +97,20 @@ void HOG::process() {
   }
 }
 
-void HOG::computeAndWriteOpenCV() {
-  std::vector<float> desc;
-  std::vector<cv::Point> locations;
+void HOG::initializeOpenCVHOG() {
   auto winSize = cv::Size(64, 128);
   auto blockSize = cv::Size(16, 16);
   auto stride = cv::Size(8, 8);
   auto cellSize = cv::Size(8, 8);
   auto padding = cv::Size(0, 0);
+  opencvHOG = cv::HOGDescriptor(winSize, blockSize, stride, cellSize, numBins);
+}
 
+void HOG::computeAndWriteOpenCVHog() {
+  std::vector<float> desc;
+  std::vector<cv::Point> locations;
   // Compute
-  auto HOGopenCV = cv::HOGDescriptor(winSize, blockSize, stride, cellSize, numBins);
-  HOGopenCV.compute(inputImgGray, desc, stride, padding, locations);
+  opencvHOG.compute(inputImgGray, desc, cv::Size(8, 8), cv::Size(0, 0), locations);
 
   // Write to .txt file
   if(verbose) {

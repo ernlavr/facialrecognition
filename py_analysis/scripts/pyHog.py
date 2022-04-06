@@ -46,6 +46,7 @@ if __name__ == '__main__':
     verbose = True
     profile = True
     profileIterations = 100000
+
     # Import the test image from data folder and convert it to grayscale
     image = importImage(os.path.join(FOLDER_DATA_DESCRIPTORS, "crop1_64128.png"))
     image = convertImageToGrayscale(image)

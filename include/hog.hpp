@@ -82,6 +82,12 @@ private:
      */
     const size_t cellsPerWindow_W = 2;
 
+    /**
+     * @brief Reference to the OpenCV HOG descriptor. Used during profiling.
+     */
+    cv::HOGDescriptor opencvHOG;
+
+
 
     // FUNCTIONS
 
@@ -125,6 +131,7 @@ private:
      */
     void convToUnsignAngl(cv::Mat &srcAngles);
 
+
 public:
     /**
      * @brief Construct a new HOG object. (!) Automatically converts the input image to grayscale
@@ -153,10 +160,14 @@ public:
      * @brief Main entry point for the HOG computation. Linearly issues all necessary calls in a sequential manner to compute the final descriptor
      */
     void process();
-    /** 
-     * Computes and prints the HOG feature descriptor using OpenCV
+    /**
+     * @brief Initializes OpenCV HOG descriptor. Used for profiling
      */
-    void computeAndWriteOpenCV();
+    void initializeOpenCVHOG();
+    /** 
+     * Computes and writes the HOG feature descriptor using OpenCV
+     */
+    void computeAndWriteOpenCVHog();
     /**
      * @brief Writes a descritor to a text file at the designated path
      * 

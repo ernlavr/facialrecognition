@@ -29,10 +29,14 @@ void profileFunction(std::function<void()> func, int iterations, std::string nam
 
 int main(int argc, char** argv){
     bool verbose = false;
+    bool profile = false;
     if(argc > 1) {
         auto arg1 = std::string(argv[1]);
         if(arg1 == "-v") {
             verbose = true;
+        }
+        if(arg1 == "-p") {
+            profile = true;
         }
     }
 
@@ -41,13 +45,17 @@ int main(int argc, char** argv){
 	HOG hog(img, verbose);
     hog.process();
 
-    // Measure the time it takes to perform 1 iteration of hog.process() 1 million times
-    profileFunction(std::bind(&HOG::computeAndWriteOpenCV, &hog), 100000, "OpenCV");
-    profileFunction(std::bind(&HOG::process, &hog), 100000, "Mine");
-    
+    if(profile) {
+        hog.initializeOpenCVHOG();
+        std::cout << "Profiling..." << std::endl;
+        // Measure the time it takes to perform 1 iteration of hog.process() 100k times
+        profileFunction(std::bind(&HOG::computeAndWriteOpenCVHog, &hog), 100000, "OpenCV");
+        profileFunction(std::bind(&HOG::process, &hog), 100000, "Mine");
+    }
     
     if(verbose) {
-        hog.computeAndWriteOpenCV();
+        hog.initializeOpenCVHOG();
+        hog.computeAndWriteOpenCVHog();
     }
 	return 0;
 }

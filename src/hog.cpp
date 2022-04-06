@@ -55,6 +55,12 @@ void HOG::gradientComputation() {
 }
 
 void HOG::process() {
+  // Clear containers
+  descriptor.clear();
+  histogram.clear();
+  magnitude.release();
+  angles.release();
+
   cellsY = static_cast<int>(inputImgGray.rows / pixelsPerCell);
   cellsX = static_cast<int>(inputImgGray.cols / pixelsPerCell);
   histogram.resize(cellsY);
@@ -91,7 +97,7 @@ void HOG::process() {
   }
 }
 
-void HOG::computeAndPrintOpenCV() {
+void HOG::computeAndWriteOpenCV() {
   std::vector<float> desc;
   std::vector<cv::Point> locations;
   auto winSize = cv::Size(64, 128);
@@ -103,9 +109,11 @@ void HOG::computeAndPrintOpenCV() {
   // Compute
   auto HOGopenCV = cv::HOGDescriptor(winSize, blockSize, stride, cellSize, numBins);
   HOGopenCV.compute(inputImgGray, desc, stride, padding, locations);
-  
+
   // Write to .txt file
-  writeToFile("HOG_openCV.txt", desc);
+  if(verbose) {
+    writeToFile("HOG_openCV.txt", desc);
+  }
 }
 
 void HOG::L2norm(std::vector<std::vector<float>> &input) {

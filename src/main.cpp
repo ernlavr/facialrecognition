@@ -9,6 +9,24 @@
 
 #define DATASET_FOLDER "/home/ernests/Documents/Personal/universityNotes/Semester2/imgProc/MiniProject/facialrecognition/dataset/INRIAPerson/64x128"
 
+void profileFunction(std::function<void()> func, int iterations, std::string name) {
+    double totalTimeTaken = 0.0;
+    for (int i = 0; i < iterations; i++) {
+        auto start = std::chrono::high_resolution_clock::now();
+        func();
+        auto end = std::chrono::high_resolution_clock::now();
+        totalTimeTaken += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    }
+
+    // Convert timePerIteration to nanoseconds and print it
+    std::cout << name << " Time per iteration: " << totalTimeTaken / iterations << " nanoseconds" << std::endl;
+
+    // Convert total time taken to seconds and store it in a new variable and print the new variable
+    double totalTimeTakenInSeconds = totalTimeTaken / 1000000000.0;
+    std::cout << name << " Total time taken: " << totalTimeTakenInSeconds << " seconds" << std::endl;
+    std::cout << name << " Total time taken: " << totalTimeTaken << " ns" << std::endl;
+}
+
 int main(int argc, char** argv){
     bool verbose = false;
     if(argc > 1) {
@@ -21,10 +39,15 @@ int main(int argc, char** argv){
 	std::string img(DATASET_FOLDER);
 	img.append("/crop1_64128.png");
 	HOG hog(img, verbose);
-	hog.process();
+    hog.process();
+
+    // Measure the time it takes to perform 1 iteration of hog.process() 1 million times
+    profileFunction(std::bind(&HOG::computeAndWriteOpenCV, &hog), 100000, "OpenCV");
+    profileFunction(std::bind(&HOG::process, &hog), 100000, "Mine");
+    
     
     if(verbose) {
-        hog.computeAndPrintOpenCV();
+        hog.computeAndWriteOpenCV();
     }
 	return 0;
 }

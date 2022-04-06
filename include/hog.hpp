@@ -156,7 +156,7 @@ public:
     /** 
      * Computes and prints the HOG feature descriptor using OpenCV
      */
-    void computeAndPrintOpenCV();
+    void computeAndWriteOpenCV();
     /**
      * @brief Writes a descritor to a text file at the designated path
      * 
